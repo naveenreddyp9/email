@@ -105,7 +105,7 @@ reportName: 'HTML Report', reportTitles: ''])
    emailext body: '${SCRIPT, template="groovy-html.template"}',
 recipientProviders: [[$class: 'DevelopersRecipientProvider'], [$class: 'RequesterRecipientProvider']],
 subject: 'Build Successful ${JOB_NAME}',
-to: 'naveen.reddy14@wipro.com',
+to: 'naveenreddyp8540@gmail.com',
 mimeType: 'text/html'
 
          }
