@@ -102,7 +102,7 @@ reportName: 'HTML Report', reportTitles: ''])
          stage('Send Email'){
            steps
           {
-   emailext body: '${SCRIPT, template="groovy-html.template"}',
+  emailext body: '${SCRIPT, template="groovy-html.template"}',
 recipientProviders: [[$class: 'DevelopersRecipientProvider'], [$class: 'RequesterRecipientProvider']],
 subject: 'Build Successful ${JOB_NAME}',
 to: 'naveenreddyp8540@gmail.com',
