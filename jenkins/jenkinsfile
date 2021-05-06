@@ -1,19 +1,30 @@
-node {
-stage('SCM Checkout'){
-git 'https://github.com/naveenreddyp9/email.git'
-}
-stage('compile-package'){
-def mvnHome = tool name 'maven-3', type: 'maven'
-sh "${mvnHome}/bin/mvn package"
-}
-stage ('Email Notification'){
-mail bcc: '', 
-body: '${SCRIPT, template="groovy-html.template"}', 
-cc: '', 
-from: '', 
-replyTo: '', 
-subject: 'sonar qube analysis report', 
-to: 'naveenreddyp8540@gmail.com'
-}
+pipeline {
+    agent any
+     stages {
+         stage('Send Email'){
+           steps
+          {
+  emailext body: '${SCRIPT, template="groovy-html.template"}',
+ recipientProviders: [[$class: 'DevelopersRecipientProvider'], [$class: 'RequesterRecipientProvider']],
+subject: 'Build Successful ${JOB_NAME}',
+to: 'naveenreddyp8540@gmail.com',
+mimeType: 'text/html'
+
+         }
+               
+        }
+
 
 }
+    post {
+        always 
+    }
+{
+        always {
+            cleanWs()
+        }
+
+  }
+ 
+}
+
