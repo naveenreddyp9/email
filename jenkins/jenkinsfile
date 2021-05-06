@@ -1,19 +1,133 @@
-node {
-stage('SCM Checkout'){
-git 'https://github.com/naveenreddyp9/email.git'
+pipeline {
+    agent {
+node("any")
+    }
+    stages {
+        stage('Prepare') {
+            steps {
+                sh 'git clean -xdff'
+                sh 'git submodule sync'
+                sh 'git submodule update --init --recursive'
+                // Ensure that Bob has all of its dependencies.
+                sh './bob/bob -v'
+            }
+        }
+        stage('Clean') {
+            steps {
+                sh './bob/bob clean'
+            }
+        }
+        stage('Init') {
+            steps {
+                script {
+                    if (env.RELEASE == 'false') {
+                        sh './bob/bob init-review'
+                    } else {
+                        sh './bob/bob init-release'
+                    }
+                }
+            }
+        }
+        stage('Lint') {
+            steps {
+                sh './bob/bob lint > lint.log'
+            }
+        }
+        stage('Build') {
+            steps {
+                sh './bob/bob build > build.log'
+            }
+        }
+stage('Unit Test') {
+steps {
+script{
+if (env.RELEASE == 'false'){
+  sh './bob/bob unit > unit.log'
 }
- stage('compile-package'){
- def mvnHome = tool name 'maven-3', type: 'maven'
- sh "${mvnHome}/bin/mvn package"
 }
-stage ('Email Notification'){
-mail bcc: '', 
-body: '${SCRIPT, template="groovy-html.template"}', 
-cc: '', 
-from: '', 
-replyTo: '', 
-subject: 'sonar qube analysis report', 
-to: 'naveenreddyp8540@gmail.com'
 }
+}
+stage('Jacoco Report generation') {
+steps {
+script{
+if (env.RELEASE == 'false'){
+  sh './bob/bob jacoco > jacoco.log'
+sh './bob/bob sonar > sonar.log'
+}
+}
+}
+}
+stage('Contract Test') {
+steps {
+script{
+if (env.RELEASE == 'false'){
+  sh './bob/bob contract-tests'
+}
+}
+}
+}
+        stage('Image') {
+            steps {
+                sh './bob/bob image > image.log'
+            }
+        }
+        stage('Package') {
+            steps {
+                sh './bob/bob package > package.log'
+            }
+        }
+stage("Code coverage") {
+     steps {
+         
+sh './bob/bob jacoco > jacoco.html > jacoco.xml'
+ 
+   }
+}
+        stage('Publish') {
+           
+            steps {
+                sh './bob/bob publish > bob-publish.log'
+archiveArtifacts artifacts: '**/*.log'
+junit 'target/surefire-reports/*.xml'
+
+publishHTML([allowMissing: false,
+alwaysLinkToLastBuild: false,
+keepAll: true,
+reportDir: 'target/site/cobertura',
+reportFiles: 'coverage.xml',
+reportName: 'HTML Report', reportTitles: ''])
+               
+            }
+        }
+         stage('Send Email'){
+           steps
+          {
+  emailext body: '${SCRIPT, template="groovy-html.template"}',
+ recipientProviders: [[$class: 'DevelopersRecipientProvider'], [$class: 'RequesterRecipientProvider']],
+subject: 'Build Successful ${JOB_NAME}',
+to: 'naveenreddyp8540@gmail.com',
+mimeType: 'text/html'
+
+         }
+               
+        }
+
 
 }
+    post {
+        always {
+       
+         junit 'target/surefire-reports/*.xml'
+cobertura coberturaReportFile: './TestResults/jacoco.xml'
+        }
+    }
+{
+        always {
+            cleanWs()
+        }
+
+  }
+ 
+}
+
+
